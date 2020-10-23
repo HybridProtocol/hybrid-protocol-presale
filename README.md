@@ -163,19 +163,81 @@ You cannot exit 100% using Pool Tokens (rebind will revert). It is possible to d
 
 Specifically, if a CRP has the canRemoveAllTokens permission, it is possible to call removeToken for every token in the pool, and recover all assets without loss. (Otherwise, with only canAddRemoveTokens permission, the pool would always need to contain at least two tokens, and you could only "withdraw" 1/3 of the balance at a time through the exit methods.) There are special cases where this is appropriate (e.g., an "auction," where only the controller provides liquidity), but any pools with either "removeToken" right enabled require a high level of trust, since the controller could remove all assets from the pool at any time.
 
-## Balancer Pool Templates
+## How to create Configurable Right Pool
+At first need to get factory for Configurable Right Pool creation. It avaiable by address in **Rinkeby** testnet
 
-Our vision is to provide a set of configurable Balancer Pools that are feature-rich and flexible enough to be used "out of the box" in most cases, and easily extended otherwise.
-<br><br>Beyond the standard Configurable Rights Pool, the first such template (used by [Ampleforth](https://ampleforth.org)) is designed for pools containing tokens with "Elastic Supply" (e.g., AMPL). With "Fixed Supply" tokens, notably Bitcoin, your wallet balance remains constant (one hopes), but the price responds to supply and demand. <br><br>By contrast, Elastic Supply tokens expand and contract the **supply** in response to demand. The balance in your wallet <em>can change</em> (after each daily **rebase**) - but you always own a fixed proportion of the total number of tokens.
+```javascript
+const crpFactory = await CRPFactory.at('0x999A3Ab5CF12F884DAc51B426eF1B04A7C3C8deD')
+```
+For this one need to describe permission and pool parameters
+Permission params:
 
-These go in the [templates](https://github.com/balancer-labs/configurable-rights-pool/tree/master/contracts/templates) directory. The first is `ElasticSupplyPool` (and corresponding `ESPFactory`)
+```javascript
+const permissions = { 
+  canPauseSwapping: true,
+  canChangeSwapFee: true,
+  canChangeWeights: true,
+  canAddRemoveTokens: false,
+  canWhitelistLPs: false,
+  canChangeCap: false,
+  canRemoveAllTokens: false
+}
+```
+For pool params need to get deployed test WETH and XYZ tokens and determine additional values
 
-Questions about Smart Pools? Join us on [Discord](https://discord.gg/qjFcczk)! Want to integrate configurable smart pools into your own project? The smart-pool-dev channel is for you.
+```javascript
+const WETH = '0x1c6b4a446157FB1d609A7F8f077DAF82936a5191'
+const XYZ = '0x9D1944Fda601A031Ceb0a2b180ae36238eCb2C13'
 
-## Getting Started - Local Testing
+const startWeights = [toWei('1'), toWei('39')];
+const startBalances = [toWei('80000'), toWei('40')];
+const swapFee = 10 ** 15;
+```
+Pool params:
 
-`yarn`
+```javascript
+const poolParams = { 
+  poolTokenSymbol: 'AYE',
+  poolTokenName: 'AYE',
+  constituentTokens: [WETH, XYZ],
+  tokenBalances: startBalances,
+  tokenWeights: startWeights,
+  swapFee: swapFee
+}
+```
+In addition need to know Balancer Factory address
 
-`yarn testrpc`
+```javascript
+const BFactoryAddress = '0x3D088F1Ed83B32D141934973042FBc5A0980F89a'
+```
+Finally CRP could be created
+```javascript
+const crp = await crpFactory.newCrp(BFactoryAddress, poolParams, permissions)
+```
+but you can get it in **Rinkeby** testnet by the address
+```javascript
+const crp = await ConfigurableRightsPool.at('0x974327bdc8eF4367Af6E3A412E12EB4d7bb52D45')
+```
 
-`yarn test`
+
+
+
+### Update weights
+In order to make the contract update weights according to plan, you need to call external function `pokeWeights()`. But at first pool has to be created by the CRP. For this one need approve pool tokens
+for CRP address 
+
+```javascript
+await weth.approve(crp.address, MAX)
+await xyz.approve(crp.address, MAX)
+```
+and then pool could be created
+```javascript
+await crp.createPool(toWei('100'), 10, 10)
+```
+Finally, weights could be changed
+
+```javascript
+await crp.pokeWeights()
+```
+
+Example of transaction you can find by the link https://rinkeby.etherscan.io/tx/0x4b9b36945f2629adeb1228543bc836bb8160a9c9b133b021c54a838032285511
