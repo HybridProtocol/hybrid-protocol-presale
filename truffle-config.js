@@ -1,3 +1,9 @@
+require("@babel/preset-env");
+require("@babel/polyfill");
+
+const HDWalletProvider = require("truffle-hdwallet-provider");
+require('dotenv').config()
+
 module.exports = {
     networks: {
         development: {
@@ -12,6 +18,18 @@ module.exports = {
             port: 8555,
             gas: 0xfffffffffff,
             gasPrice: 0x01,
+        },
+        rinkeby: {
+            provider: () => new HDWalletProvider(process.env.MNEMONIC_OR_PRIVATE_KEY, "https://rinkeby.infura.io/v3/" + process.env.INFURA_API_KEY),
+            network_id: 4,
+            gas: 7989018,
+            gasPrice: 200000000000
+        },
+        ropsten: {
+            provider: () => new HDWalletProvider(process.env.MNEMONIC_OR_PRIVATE_KEY, "https://ropsten.infura.io/v3/" + process.env.INFURA_API_KEY),
+            network_id: 3,
+            gas: 7989018,
+            gasPrice: 180000000000
         },
     },
     // Configure your compilers
