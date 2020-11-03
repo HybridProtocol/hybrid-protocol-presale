@@ -131,13 +131,9 @@ contract('Hybrid Presale', async (accounts) => {
                         (fromWei(weightHBT)*2.5).toFixed(4) + '%');
                     await time.advanceBlock();
 
-                    // Calculate the percentages (rounded to 3 decimals to avoid numeric issues)
-                    pctUSDC = Math.floor((0.9 * Math.pow(3, -i * 6500 /5)));
-                    pctHBT = 1 - pctUSDC;
-
-                    // Convert the percentages to denormalized weights
-                    normUSDC = Math.floor(pctUSDC*40*1000)/1000;
-                    normHBT = Math.floor(pctHBT*40*1000)/1000;
+                    // Calculate the normalized weights
+                    normUSDC = Math.floor(0.9 * Math.pow(3, -i / (6500 * 5)));
+                    normHBT = 1 - normUSDC;
 
                     console.log(`\nNew weights: USDC weight: ${normUSDC}; HBT weight: ${normHBT}`);
 
